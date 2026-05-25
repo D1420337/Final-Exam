@@ -34,6 +34,11 @@ def create_app():
             recent_books = []
         return render_template('index.html', recent_books=recent_books)
 
+    @app.route('/dashboard')
+    def dashboard_redirect():
+        from flask import redirect, url_for
+        return redirect(url_for('cabinet.index'))
+
     # Automatically create database tables if they do not exist
     with app.app_context():
         db.create_all()

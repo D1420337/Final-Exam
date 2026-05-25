@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}修改書籍資訊 - 校園二手書交換平台{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    <div class="form-header">
+        <h2><i class="fa-regular fa-pen-to-square" style="color: var(--primary);"></i> 修改二手書籍資訊</h2>
+        <p>您可以更新書籍基本資料、價格模式或補充更多書況細節。</p>
+    </div>
+
+    <form action="{{ url_for('cabinet.edit_action', book_id=book.id) }}" method="POST" enctype="multipart/form-data" id="edit-form">
+        <!-- 交易模式切換 (出售/交換) -->
+        <div class="form-group full-width">
+            <label class="required">交易模式</label>
+            <div class="mode-toggle-container">
+                <div class="mode-btn {% if not book.is_exchange %}active{% endif %}" id="mode-sale-btn" onclick="setTradeMode('sale')">
+                    <i class="fa-solid fa-tags"></i> 二手出售
+                </div>
+                <div class="mode-btn {% if book.is_exchange %}active{% endif %}" id="mode-exchange-btn" onclick="setTradeMode('exchange')">
+                    <i class="fa-solid fa-right-left"></i> 僅限交換
+                </div>
+            </div>
+            <!-- 隱藏控制項，保存實際傳送值 -->
+            <input type="hidden" name="is_exchange" id="is_exchange_input" value="{% if book.is_exchange %}true{% else %}false{% endif %}">
+        </div>
+
+        <div class="form-grid">
+            <!-- 書名 -->
+            <div class="form-group full-width">
+                <label for="title" class="required">書籍名稱</label>
+                <input type="text" id="title" name="title" class="input-control" required value="{{ book.title }}">
+            </div>
+
+            <!-- 作者 -->
+            <div class="form-group">
+                <label for="author" class="required">書籍作者</label>
+                <input type="text" id="author" name="author" class="input-control" required value="{{ book.author }}">
+            </div>
+
+            <!-- 出版社 -->
+            <div class="form-group">
+                <label for="publisher">出版社</label>
+                <input type="text" id="publisher" name="publisher" class="input-control" value="{{ book.publisher or '' }}">
+            </div>
+
+            <!-- 出版年份 - 強制要求 -->
+            <div class="form-group">
+                <label for="publish_year" class="required">出版年份</label>
+                <input type="text" id="publish_year" name="publish_year" class="input-control" required value="{{ book.publish_year }}">
+            </div>
+
+            <!-- 版本 - 強制要求 -->
+            <div class="form-group">
+                <label for="edition" class="required">版本/版次</label>
+                <input type="text" id="edition" name="edition" class="input-control" required value="{{ book.edition }}">
+            </div>
+
+            <!-- ISBN -->
+            <div class="form-group">
+                <label for="isbn">ISBN 國際書號</label>
+                <input type="text" id="isbn" name="isbn" class="input-control" value="{{ book.isbn or '' }}">
+            </div>
+
+            <!-- 價格輸入欄位 (出售模式下顯示) -->
+            <div class="form-group {% if book.is_exchange %}hidden-control{% endif %}" id="price-group">
+                <label for="price" class="required">出售價格 (TWD)</label>
+                <input type="number" id="price" name="price" class="input-control" min="0" {% if not book.is_exchange %}required{% endif %} value="{{ book.price }}">
+            </div>
+
+            <!-- 交換要求輸入欄位 (交換模式下顯示) -->
+            <div class="form-group {% if not book.is_exchange %}hidden-control{% endif %}" id="exchange-group">
+                <label for="exchange_item" class="required">期望交換的書籍</label>
+                <input type="text" id="exchange_item" name="exchange_item" class="input-control" {% if book.is_exchange %}required{% endif %} value="{{ book.exchange_item or '' }}">
+            </div>
+
+            <!-- 適用系所 -->
+            <div class="form-group">
+                <label for="dept">適用系所</label>
+                <select id="dept" name="dept" class="input-control">
+                    <option value="">-- 請選擇適用系所（選填） --</option>
+                    <option value="資訊工程學系" {% if book.dept == '資訊工程學系' %}selected{% endif %}>資訊工程學系</option>
+                    <option value="電機工程學系" {% if book.dept == '電機工程學系' %}selected{% endif %}>電機工程學系</option>
+                    <option value="企業管理學系" {% if book.dept == '企業管理學系' %}selected{% endif %}>企業管理學系</option>
+                    <option value="財務金融學系" {% if book.dept == '財務金融學系' %}selected{% endif %}>財務金融學系</option>
+                    <option value="外國語文學系" {% if book.dept == '外國語文學系' %}selected{% endif %}>外國語文學系</option>
+                    <option value="機械工程學系" {% if book.dept == '機械工程學系' %}selected{% endif %}>機械工程學系</option>
+                    <option value="其他系所" {% if book.dept == '其他系所' %}selected{% endif %}>其他系所/通識課程</option>
+                </select>
+            </div>
+
+            <!-- 適用科目 -->
+            <div class="form-group">
+                <label for="subject">適用科目</label>
+                <input type="text" id="subject" name="subject" class="input-control" value="{{ book.subject or '' }}">
+            </div>
+
+            <!-- 書況評級 -->
+            <div class="form-group full-width">
+                <label for="condition" class="required">書籍書況評級</label>
+                <select id="condition" name="condition" class="input-control" required>
+                    <option value="全新" {% if book.condition == '全新' %}selected{% endif %}>全新（無任何折損與劃記）</option>
+                    <option value="接近全新" {% if book.condition == '接近全新' %}selected{% endif %}>接近全新（極微細使用痕跡）</option>
+                    <option value="輕微劃記" {% if book.condition == '輕微劃記' %}selected{% endif %}>輕微劃記（有少許鉛筆或原子筆筆記）</option>
+                    <option value="劃記繁多" {% if book.condition == '劃記繁多' %}selected{% endif %}>劃記繁多（有大量螢光筆或筆記痕跡）</option>
+                    <option value="書頁破損" {% if book.condition == '書頁破損' %}selected{% endif %}>書頁破損或缺頁（有顯著折痕或輕微破損）</option>
+                </select>
+            </div>
+
+            <!-- 書況詳細描述 -->
+            <div class="form-group full-width">
+                <label for="description">書況詳細描述</label>
+                <textarea id="description" name="description" class="input-control">{{ book.description or '' }}</textarea>
+            </div>
+
+            <!-- 照片修改 (選填，保留原有相片) -->
+            <div class="form-group full-width">
+                <label>書籍封面實拍照片 (如不更換請留空)</label>
+                
+                <!-- 顯示原有相片 -->
+                {% if book.image_url %}
+                    <div style="margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem;" id="current-image-container">
+                        <img src="{{ book.image_url }}" alt="目前封面" style="max-height: 100px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                        <span style="font-size: 0.9rem; color: var(--text-muted);">目前正在使用的封面照片</span>
+                    </div>
+                {% endif %}
+                
+                <div class="upload-area" id="drop-zone" onclick="document.getElementById('book_image').click();">
+                    <div class="upload-icon">
+                        <i class="fa-regular fa-image"></i>
+                    </div>
+                    <div class="upload-text">點擊此區域 或 拖曳新照片進行更換</div>
+                    <div class="upload-hint">支援格式：PNG, JPG, JPEG, WEBP 且檔案大小限制在 2MB 以內</div>
+                    <input type="file" id="book_image" name="book_image" class="upload-input" accept="image/*" onchange="previewImage(this)">
+                </div>
+                <!-- 預覽容器 -->
+                <div class="image-preview-container" id="preview-container">
+                    <img id="image-preview" src="#" alt="書籍封面預覽" class="image-preview">
+                    <button type="button" class="remove-btn" onclick="clearPreview(event)"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 按鈕區 -->
+        <div class="form-actions">
+            <a href="{{ url_for('cabinet.index') }}" class="btn btn-secondary"><i class="fa-solid fa-arrow-rotate-left"></i> 取消修改</a>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> 儲存修改</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 交易模式切換
+    function setTradeMode(mode) {
+        const saleBtn = document.getElementById('mode-sale-btn');
+        const exchangeBtn = document.getElementById('mode-exchange-btn');
+        const isExchangeInput = document.getElementById('is_exchange_input');
+        const priceGroup = document.getElementById('price-group');
+        const exchangeGroup = document.getElementById('exchange-group');
+        const priceInput = document.getElementById('price');
+        const exchangeInput = document.getElementById('exchange_item');
+
+        if (mode === 'sale') {
+            saleBtn.classList.add('active');
+            exchangeBtn.classList.remove('active');
+            isExchangeInput.value = 'false';
+            priceGroup.classList.remove('hidden-control');
+            exchangeGroup.classList.add('hidden-control');
+            priceInput.setAttribute('required', 'required');
+            exchangeInput.removeAttribute('required');
+        } else {
+            saleBtn.classList.remove('active');
+            exchangeBtn.classList.add('active');
+            isExchangeInput.value = 'true';
+            priceGroup.classList.add('hidden-control');
+            exchangeGroup.classList.remove('hidden-control');
+            priceInput.removeAttribute('required');
+            exchangeInput.setAttribute('required', 'required');
+        }
+    }
+
+    // 拖曳與預覽
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('book_image');
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--primary)';
+            dropZone.style.backgroundColor = 'var(--primary-light)';
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--border)';
+            dropZone.style.backgroundColor = 'var(--light)';
+        }, false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length) {
+            fileInput.files = files;
+            previewImage(fileInput);
+        }
+    }, false);
+
+    function previewImage(input) {
+        const previewContainer = document.getElementById('preview-container');
+        const previewImage = document.getElementById('image-preview');
+        const dropZone = document.getElementById('drop-zone');
+        const currentImg = document.getElementById('current-image-container');
+
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            if (file.size > 2 * 1024 * 1024) {
+                alert('圖片檔案大小超過 2MB 限制！');
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                previewContainer.style.display = 'block';
+                dropZone.style.display = 'none';
+                if (currentImg) currentImg.style.display = 'none';
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function clearPreview(e) {
+        e.stopPropagation();
+        const previewContainer = document.getElementById('preview-container');
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('book_image');
+        const currentImg = document.getElementById('current-image-container');
+
+        fileInput.value = '';
+        previewContainer.style.display = 'none';
+        dropZone.style.display = 'block';
+        if (currentImg) currentImg.style.display = 'flex';
+    }
+</script>
+{% endblock %}
