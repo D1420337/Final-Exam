@@ -9,16 +9,16 @@ class Book(db.Model):
     title = db.Column(db.String(255), nullable=False)
     author = db.Column(db.String(255), nullable=False)
     publisher = db.Column(db.String(255), nullable=True)
-    isbn = db.Column(db.String(13), nullable=True)
+    isbn = db.Column(db.String(13), nullable=True, index=True)
     price = db.Column(db.Integer, default=0)
     is_exchange = db.Column(db.Boolean, default=False)
     exchange_item = db.Column(db.String(255), nullable=True)
     condition = db.Column(db.String(50), nullable=False)  # '全新', '接近全新', '輕微劃記', '劃記繁多', '書頁破損'
     description = db.Column(db.Text, nullable=True)
     image_url = db.Column(db.String(255), nullable=True)
-    status = db.Column(db.String(20), default='Available')  # 'Available', 'Reserved', 'Sold'
-    dept = db.Column(db.String(100), nullable=True)
-    subject = db.Column(db.String(100), nullable=True)
+    status = db.Column(db.String(20), default='Available', index=True)  # 'Available', 'Reserved', 'Sold'
+    dept = db.Column(db.String(100), nullable=True, index=True)
+    subject = db.Column(db.String(100), nullable=True, index=True)
     publish_year = db.Column(db.String(50), nullable=False)
     edition = db.Column(db.String(50), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
