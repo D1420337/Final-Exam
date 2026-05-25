@@ -198,17 +198,30 @@ def detail(book_id):
 
 @books_bp.route('/<int:book_id>/comment', methods=['POST'])
 def add_comment(book_id):
-    """
-    POST /books/<book_id>/comment
-    Submit a public comment/question or reply on a book's detail page.
-    Inputs:
-        - URL Parameter: book_id (integer)
-        - Form fields: content, parent_id (optional, if replying to an existing comment)
-    Logic:
-        - Verify login state.
-        - If parent_id is provided, verify parent comment exists.
-        - Call Comment.create() to save comment.
-    Output:
-        - Redirect to GET /books/<book_id>
-    """
-    pass
+    if not session.get('user_id'):
+        flash('請先登入系統才能發表留言。', 'warning')
+        return redirect(url_for('auth.login_page'))
+        
+    author_id = session.get('user_id')
+    content = request.form.get('content', '').strip()
+    parent_id_str = request.form.get('parent_id', '').strip()
+    
+    if not content:
+        flash('留言內容不能為空。', 'danger')
+        return redirect(url_for('books.detail', book_id=book_id))
+        
+    parent_id = None
+    if parent_id_str:
+        try:
+            parent_id = int(parent_id_str)
+        except ValueError:
+            pass
+            
+    try:
+        from app.models.comment import Comment
+        Comment.create(book_id=book_id, author_id=author_id, content=content, parent_id=parent_id)
+        flash('留言成功發表！', 'success')
+    except Exception as e:
+        flash(f'發表留言失敗，錯誤：{str(e)}', 'danger')
+        
+    return redirect(url_for('books.detail', book_id=book_id))
