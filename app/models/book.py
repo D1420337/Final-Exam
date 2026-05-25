@@ -19,6 +19,8 @@ class Book(db.Model):
     status = db.Column(db.String(20), default='Available')  # 'Available', 'Reserved', 'Sold'
     dept = db.Column(db.String(100), nullable=True)
     subject = db.Column(db.String(100), nullable=True)
+    publish_year = db.Column(db.String(50), nullable=False)
+    edition = db.Column(db.String(50), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -26,8 +28,8 @@ class Book(db.Model):
     comments = db.relationship('Comment', backref='book', lazy=True, cascade="all, delete-orphan")
 
     @classmethod
-    def create(cls, seller_id, title, author, publisher=None, isbn=None, price=0, is_exchange=False, exchange_item=None, condition='輕微劃記', description=None, image_url=None, status='Available', dept=None, subject=None):
-        book = cls(seller_id=seller_id, title=title, author=author, publisher=publisher, isbn=isbn, price=price, is_exchange=is_exchange, exchange_item=exchange_item, condition=condition, description=description, image_url=image_url, status=status, dept=dept, subject=subject)
+    def create(cls, seller_id, title, author, publish_year, edition, publisher=None, isbn=None, price=0, is_exchange=False, exchange_item=None, condition='輕微劃記', description=None, image_url=None, status='Available', dept=None, subject=None):
+        book = cls(seller_id=seller_id, title=title, author=author, publish_year=publish_year, edition=edition, publisher=publisher, isbn=isbn, price=price, is_exchange=is_exchange, exchange_item=exchange_item, condition=condition, description=description, image_url=image_url, status=status, dept=dept, subject=subject)
         db.session.add(book)
         db.session.commit()
         return book

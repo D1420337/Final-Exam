@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}校園二手書交換平台{% endblock %}</title>
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Platform Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- Header / Navbar -->
+    <header class="navbar">
+        <a href="/" class="brand">
+            <i class="fa-solid fa-book-open"></i>
+            <span>校園二手書交換</span>
+            <span class="brand-badge">平台</span>
+        </a>
+        
+        <nav>
+            <ul class="nav-links">
+                <li><a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">首頁</a></li>
+                <li><a href="{{ url_for('books.search') }}" class="nav-link {% if '/books/search' in request.path %}active{% endif %}">二手書檢索</a></li>
+                
+                {% if session.get('user_id') %}
+                    <li>
+                        <a href="{{ url_for('cabinet.index') }}" class="nav-link {% if '/cabinet' in request.path %}active{% endif %}">
+                            個人書櫃 <i class="fa-solid fa-folder-open"></i>
+                            <!-- Dynamic Alert Dot could be loaded here -->
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('books.upload_page') }}" class="nav-link btn-upload {% if '/books/upload' in request.path %}active{% endif %}">
+                            <i class="fa-solid fa-circle-plus"></i> 書籍上架
+                        </a>
+                    </li>
+                    <li><a href="{{ url_for('auth.logout') }}" class="nav-link"><i class="fa-solid fa-right-from-bracket"></i> 登出</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('auth.login_page') }}" class="nav-link"><i class="fa-solid fa-right-to-bracket"></i> 登入</a></li>
+                    <li><a href="{{ url_for('auth.register_page') }}" class="nav-link"><i class="fa-solid fa-user-plus"></i> 註冊</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container">
+        <!-- Flash Messages Block -->
+        <div class="alert-container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {% if category == 'success' %}
+                                <i class="fa-solid fa-circle-check"></i>
+                            {% elif category == 'danger' %}
+                                <i class="fa-solid fa-circle-xmark"></i>
+                            {% else %}
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            {% endif %}
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer style="text-align: center; padding: 2rem; color: var(--text-muted); border-top: 1px solid var(--border); background-color: var(--white); margin-top: auto;">
+        <p>&copy; 2026 校園二手書交換與買賣平台. All rights reserved.</p>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
