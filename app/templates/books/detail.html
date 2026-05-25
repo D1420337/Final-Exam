@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book.title }} - 書籍詳情 - 校園二手書交換平台{% endblock %}
+
+{% block extra_head %}
+<style>
+    .detail-layout {
+        display: grid;
+        grid-template-columns: 400px 1fr;
+        gap: 3rem;
+        align-items: start;
+        background-color: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--border);
+        padding: 3rem;
+        margin-bottom: 2rem;
+    }
+
+    .detail-img-section {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .detail-img-wrapper {
+        background-color: var(--light);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        height: 380px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .detail-img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .detail-info-section {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .info-header {
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 1.5rem;
+    }
+
+    .info-title {
+        font-size: 2.25rem;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+    }
+
+    .info-meta {
+        display: flex;
+        gap: 1rem;
+        color: var(--text-muted);
+        font-size: 0.95rem;
+    }
+
+    /* Price / Exchange Box */
+    .deal-box {
+        background-color: var(--primary-light);
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+        border: 1.5px dashed var(--primary);
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .deal-label {
+        font-size: 0.85rem;
+        color: var(--primary);
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .deal-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--dark);
+        font-family: var(--font-heading);
+    }
+
+    .specs-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        background-color: var(--light);
+        padding: 1.5rem;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+    }
+
+    .spec-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .spec-label {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+
+    .spec-val {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--dark);
+    }
+
+    /* Comment board */
+    .comment-board {
+        background-color: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--border);
+        padding: 3rem;
+        margin-top: 3rem;
+    }
+
+    @media (max-width: 992px) {
+        .detail-layout {
+            grid-template-columns: 1fr;
+            padding: 1.5rem;
+            gap: 2rem;
+        }
+
+        .detail-img-wrapper {
+            height: 280px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-layout">
+    <!-- 左側圖片與狀態標籤 -->
+    <div class="detail-img-section">
+        <div class="detail-img-wrapper">
+            {% if book.image_url %}
+                <img src="{{ book.image_url }}" alt="{{ book.title }}" class="detail-img">
+            {% else %}
+                <i class="fa-solid fa-book" style="font-size: 8rem; color: var(--text-muted);"></i>
+            {% endif %}
+        </div>
+        
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center;">
+            <span class="tag-item tag-dept" style="padding: 0.4rem 1rem; font-size: 0.9rem;">
+                <i class="fa-solid fa-building-columns"></i> {{ book.dept or '未分類系所' }}
+            </span>
+            <span class="tag-item tag-condition" style="padding: 0.4rem 1rem; font-size: 0.9rem; background-color: var(--light); color: var(--text-muted); border: 1px solid var(--border);">
+                書況評級：<strong>{{ book.condition }}</strong>
+            </span>
+        </div>
+    </div>
+
+    <!-- 右側書籍詳細欄位資訊 -->
+    <div class="detail-info-section">
+        <div class="info-header">
+            <h1 class="info-title">{{ book.title }}</h1>
+            <div class="info-meta">
+                <span>作者：<strong>{{ book.author }}</strong></span>
+                <span>|</span>
+                <span>上架日期：{{ book.created_at.strftime('%Y-%m-%d') }}</span>
+            </div>
+        </div>
+
+        <!-- 價格/交換資訊區 -->
+        <div class="deal-box">
+            {% if book.is_exchange %}
+                <div class="deal-label"><i class="fa-solid fa-right-left"></i> 交易模式：僅限交換</div>
+                <div class="deal-value" style="font-size: 1.5rem; color: var(--accent);"><i class="fa-solid fa-book-medical"></i> 期望換取：{{ book.exchange_item }}</div>
+            {% else %}
+                <div class="deal-label"><i class="fa-solid fa-tags"></i> 交易模式：二手出售</div>
+                <div class="deal-value" style="color: var(--primary);">$ {{ book.price }} <span style="font-size: 1rem; font-weight: normal; color: var(--text-muted);">TWD (當面付清)</span></div>
+            {% endif %}
+        </div>
+
+        <!-- 強制與其他規格欄位 -->
+        <div class="specs-grid">
+            <div class="spec-item">
+                <span class="spec-label">出版年份 (強制要求)</span>
+                <span class="spec-val"><i class="fa-solid fa-calendar-days" style="color: var(--primary);"></i> {{ book.publish_year }} 年</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">版本/版次 (強制要求)</span>
+                <span class="spec-val"><i class="fa-solid fa-code-branch" style="color: var(--primary);"></i> {{ book.edition }}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">適用科目</span>
+                <span class="spec-val">{{ book.subject or '未填寫科目' }}</span>
+            </div>
+            <div class="spec-item">
+                <span class="spec-label">ISBN 國際書號</span>
+                <span class="spec-val">{{ book.isbn or '未填寫' }}</span>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+                <span class="spec-label">出版社</span>
+                <span class="spec-val">{{ book.publisher or '未填寫出版社' }}</span>
+            </div>
+        </div>
+
+        <!-- 書況詳細描述 -->
+        <div style="border-top: 1px solid var(--border); padding-top: 1.5rem;">
+            <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--dark); font-weight: 700;">書況詳細描述</h3>
+            <p style="color: var(--text-main); font-size: 1rem; white-space: pre-line; background-color: var(--light); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">{{ book.description or '無額外描述。' }}</p>
+        </div>
+
+        <!-- F-03 預約互動 UI 區塊 (狀態控制) -->
+        <div style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 0.5rem;">
+            {% if not session.get('user_id') %}
+                <!-- 1. 未登入狀態 -->
+                <div style="text-align: center; background-color: var(--light); padding: 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border);">
+                    <p style="color: var(--text-muted); margin-bottom: 1rem; font-weight: 500;">
+                        <i class="fa-solid fa-circle-info"></i> 您必須先登入，才能對此書籍發送預約請求。
+                    </p>
+                    <a href="{{ url_for('auth.login_page') }}" class="btn btn-primary" style="display: inline-flex; width: 100%;">
+                        <i class="fa-solid fa-right-to-bracket"></i> 立即登入進行預約
+                    </a>
+                </div>
+            {% else %}
+                {% if session.get('user_id') == book.seller_id %}
+                    <!-- 2. 當前登入者為書主自己 -->
+                    <button class="btn btn-secondary" disabled style="width: 100%; cursor: not-allowed; opacity: 0.7;">
+                        <i class="fa-solid fa-user-shield"></i> 這是您自己上架的書籍（可在個人書櫃管理）
+                    </button>
+                {% else %}
+                    {% if user_req %}
+                        <!-- 3. 已送出過預約請求，依預約狀態展示 -->
+                        {% if user_req.status == 'Pending' %}
+                            <button class="btn btn-secondary" disabled style="width: 100%; cursor: not-allowed; background-color: var(--border); color: var(--text-muted);">
+                                <i class="fa-solid fa-hourglass-half" style="color: var(--warning);"></i> 已送出預約請求，等待書主確認
+                            </button>
+                        {% elif user_req.status == 'Accepted' %}
+                            <div style="background-color: var(--accent-light); border: 1.5px solid var(--accent); padding: 1.5rem; border-radius: var(--radius-md); color: var(--accent-hover); box-shadow: var(--shadow-sm);">
+                                <h4 style="margin-bottom: 0.5rem; font-weight: 700;"><i class="fa-solid fa-circle-check"></i> 預約請求已獲同意！</h4>
+                                <p style="font-size: 0.95rem; margin-bottom: 0.5rem;">書主已同意您的預約，以下為書主的聯絡資訊，請盡速聯繫雙方進行校園面交：</p>
+                                <ul style="list-style: none; padding-left: 0.5rem; display: flex; flex-direction: column; gap: 0.25rem; font-size: 1rem;">
+                                    <li><strong><i class="fa-regular fa-envelope"></i> 聯絡信箱：</strong>{{ book.seller.email }}</li>
+                                    <li><strong><i class="fa-brands fa-line" style="color: #06C755;"></i> 聯絡資訊/Line ID：</strong>{{ book.seller.contact_info or '書主未填寫 Line' }}</li>
+                                </ul>
+                            </div>
+                        {% elif user_req.status == 'Rejected' %}
+                            <button class="btn btn-danger" disabled style="width: 100%; cursor: not-allowed; background-color: hsl(0, 85%, 90%); color: var(--danger);">
+                                <i class="fa-solid fa-ban"></i> 您的預約請求已被書主拒絕，此書籍目前無法交易
+                            </button>
+                        {% endif %}
+                    {% else %}
+                        <!-- 4. 尚未預約，依書籍狀態展示 -->
+                        {% if book.status == 'Available' %}
+                            <!-- 顯示綠色「我要預約」表單與按鈕 -->
+                            <div style="background-color: hsl(145, 80%, 97%); border: 1px solid hsl(145, 80%, 90%); padding: 1.5rem; border-radius: var(--radius-md);">
+                                <form action="{{ url_for('requests.create', book_id=book.id) }}" method="POST" id="reserve-form">
+                                    <div class="form-group" style="margin-bottom: 1rem;">
+                                        <label for="message" style="color: var(--success); font-weight: 700;"><i class="fa-regular fa-comment-dots"></i> 預約留言備註</label>
+                                        <textarea id="message" name="message" class="input-control" placeholder="可填寫您預期的面交時間、欲交換的書籍方案等資訊（選填）..." style="min-height: 80px;"></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, var(--success), hsl(145, 80%, 30%)); color: var(--white); width: 100%; box-shadow: 0 4px 10px rgba(145, 80%, 40%, 0.2);">
+                                        <i class="fa-solid fa-calendar-check"></i> 我要預約 (發送請求)
+                                    </button>
+                                </form>
+                            </div>
+                        {% elif book.status == 'Reserved' %}
+                            <button class="btn btn-secondary" disabled style="width: 100%; cursor: not-allowed;">
+                                <i class="fa-solid fa-lock"></i> 此書已被他人預約進行面交中
+                            </button>
+                        {% elif book.status == 'Sold' %}
+                            <button class="btn btn-secondary" disabled style="width: 100%; cursor: not-allowed;">
+                                <i class="fa-solid fa-circle-check"></i> 此書已完成面交成交
+                            </button>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- F-05 商品留言問答板 -->
+<section class="comment-board">
+    <h3 style="font-size: 1.5rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid var(--accent-light); display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fa-regular fa-comments" style="color: var(--accent);"></i> 問與答 / 留言板
+    </h3>
+    
+    <!-- 留言列表 -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2.5rem;">
+        {% if comments %}
+            {% for comment in comments %}
+                {% if not comment.parent_id %}
+                    <!-- 第一層發問 -->
+                    <div style="background-color: var(--light); padding: 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                            <strong style="color: var(--primary);"><i class="fa-regular fa-user"></i> {{ comment.author.username }}</strong>
+                            <span style="color: var(--text-muted);">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                        </div>
+                        <p style="color: var(--text-main); font-size: 1rem; margin-bottom: 0.75rem;">{{ comment.content }}</p>
+                        
+                        <!-- 巢狀子回覆列表 -->
+                        <div style="margin-left: 2rem; border-left: 3px solid var(--border); padding-left: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+                            {% for reply in comments %}
+                                {% if reply.parent_id == comment.id %}
+                                    <div style="background-color: var(--white); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; font-size: 0.85rem;">
+                                            <strong style="color: var(--accent);"><i class="fa-solid fa-reply"></i> {{ reply.author.username }} {% if reply.author_id == book.seller_id %}<span style="background-color: var(--accent-light); color: var(--accent); padding: 0.1rem 0.4rem; border-radius: var(--radius-sm); font-size: 0.7rem;">書主</span>{% endif %}</strong>
+                                            <span style="color: var(--text-muted);">{{ reply.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                                        </div>
+                                        <p style="color: var(--text-main); font-size: 0.95rem;">{{ reply.content }}</p>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            <!-- 書主回覆輸入框 (僅限書主) -->
+                            {% if session.get('user_id') == book.seller_id %}
+                                <form action="{{ url_for('books.add_comment', book_id=book.id) }}" method="POST" style="margin-top: 0.5rem;">
+                                    <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <input type="text" name="content" class="input-control" placeholder="回覆此發問..." required style="padding: 0.5rem;">
+                                        <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1.5rem; font-size: 0.85rem;"><i class="fa-solid fa-paper-plane"></i> 回覆</button>
+                                    </div>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                <i class="fa-regular fa-comment-dots" style="font-size: 2.5rem; margin-bottom: 0.5rem; color: var(--text-muted);"></i>
+                <p>目前還沒有任何留言問答，有疑問可以在下方發問喔！</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- 發問表單 (非書主可發問) -->
+    {% if session.get('user_id') %}
+        {% if session.get('user_id') != book.seller_id %}
+            <form action="{{ url_for('books.add_comment', book_id=book.id) }}" method="POST" style="border-top: 1px solid var(--border); padding-top: 1.5rem;">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="comment-content">我要發問</label>
+                    <textarea id="comment-content" name="content" class="input-control" placeholder="對這本書籍的書況、面交地點等有疑問？歡迎在這裡公開提問..." required style="min-height: 80px;"></textarea>
+                </div>
+                <div style="display: flex; justify-content: flex-end;">
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> 送出公開提問</button>
+                </div>
+            </form>
+        {% endif %}
+    {% else %}
+        <div style="text-align: center; padding: 1rem; background-color: var(--light); border-radius: var(--radius-sm); border: 1px solid var(--border); color: var(--text-muted); font-size: 0.95rem;">
+            <i class="fa-solid fa-lock"></i> 請先 <a href="{{ url_for('auth.login_page') }}" style="color: var(--primary); font-weight: 600; text-decoration: underline;">登入</a> 才能在此發表留言提問。
+        </div>
+    {% endif %}
+</section>
+{% endblock %}
