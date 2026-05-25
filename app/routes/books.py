@@ -2,6 +2,7 @@ import os
 from time import time
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from werkzeug.utils import secure_filename
+from app.models import db
 from app.models.book import Book
 
 books_bp = Blueprint('books', __name__, url_prefix='/books')
@@ -13,19 +14,45 @@ def allowed_file(filename):
 
 @books_bp.route('/search', methods=['GET'])
 def search():
-    """
-    GET /books/search
-    Search, filter, and list books under 1 second.
-    Inputs:
-        - Query parameters: dept (department selection), subject (course name), isbn (ISBN string), query (general keyword)
-    Logic:
-        - Construct dynamic SQL query with SQLAlchemy filter.
-        - Fetch only books where status is 'Available'.
-        - Optimize with indexes on dept, subject, and isbn.
-    Output:
-        - Render 'books/search.html' with matching books list.
-    """
-    pass
+    dept = request.args.get('dept', '').strip()
+    subject = request.args.get('subject', '').strip()
+    isbn = request.args.get('isbn', '').strip()
+    query = request.args.get('query', '').strip()
+    
+    # Base query - only show Available books
+    book_query = Book.query.filter_by(status='Available')
+    
+    # 1. 精確篩選：系所 (dept)
+    if dept:
+        book_query = book_query.filter_by(dept=dept)
+        
+    # 2. 精確篩選：ISBN
+    if isbn:
+        book_query = book_query.filter_by(isbn=isbn)
+        
+    # 3. 模糊篩選：科目名稱 (subject)
+    if subject:
+        book_query = book_query.filter(Book.subject.ilike(f"%{subject}%"))
+        
+    # 4. 模糊篩選：通用書名/作者/關鍵字 (query)
+    if query:
+        book_query = book_query.filter(
+            db.or_(
+                Book.title.ilike(f"%{query}%"),
+                Book.author.ilike(f"%{query}%"),
+                Book.publisher.ilike(f"%{query}%")
+            )
+        )
+        
+    # 依上架時間倒序排序，確保最新商品在最前面
+    books = book_query.order_by(Book.created_at.desc()).all()
+    
+    return render_template('books/search.html', 
+                           books=books, 
+                           dept=dept, 
+                           subject=subject, 
+                           isbn=isbn, 
+                           query=query)
 
 @books_bp.route('/upload', methods=['GET'])
 def upload_page():
