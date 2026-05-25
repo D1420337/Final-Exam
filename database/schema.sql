@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS books (
     status TEXT DEFAULT 'Available', -- 'Available', 'Reserved', 'Sold'
     dept TEXT,
     subject TEXT,
+    publish_year TEXT NOT NULL,
+    edition TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
 );

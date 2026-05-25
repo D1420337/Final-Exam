@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block title %}二手書籍上架 - 校園二手書交換平台{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    <div class="form-header">
+        <h2><i class="fa-solid fa-circle-plus" style="color: var(--primary);"></i> 上架您的二手書</h2>
+        <p>請填寫書籍的完整資訊，方便買家精確搜尋與安心面交。</p>
+    </div>
+
+    <form action="{{ url_for('books.upload_action') }}" method="POST" enctype="multipart/form-data" id="upload-form">
+        <!-- 交易模式切換 (出售/交換) -->
+        <div class="form-group full-width">
+            <label class="required">交易模式</label>
+            <div class="mode-toggle-container">
+                <div class="mode-btn active" id="mode-sale-btn" onclick="setTradeMode('sale')">
+                    <i class="fa-solid fa-tags"></i> 二手出售
+                </div>
+                <div class="mode-btn" id="mode-exchange-btn" onclick="setTradeMode('exchange')">
+                    <i class="fa-solid fa-right-left"></i> 僅限交換
+                </div>
+            </div>
+            <!-- 隱藏控制項，保存實際傳送值 -->
+            <input type="hidden" name="is_exchange" id="is_exchange_input" value="false">
+        </div>
+
+        <div class="form-grid">
+            <!-- 書名 -->
+            <div class="form-group full-width">
+                <label for="title" class="required">書籍名稱</label>
+                <input type="text" id="title" name="title" class="input-control" placeholder="請輸入完整的書籍名稱（如：演算法導論）" required 
+                       value="{{ form_data.title if form_data else '' }}">
+            </div>
+
+            <!-- 作者 -->
+            <div class="form-group">
+                <label for="author" class="required">書籍作者</label>
+                <input type="text" id="author" name="author" class="input-control" placeholder="請輸入原著作者" required
+                       value="{{ form_data.author if form_data else '' }}">
+            </div>
+
+            <!-- 出版社 -->
+            <div class="form-group">
+                <label for="publisher">出版社</label>
+                <input type="text" id="publisher" name="publisher" class="input-control" placeholder="請輸入出版社（選填）"
+                       value="{{ form_data.publisher if form_data else '' }}">
+            </div>
+
+            <!-- 出版年份 - 強制要求 -->
+            <div class="form-group">
+                <label for="publish_year" class="required">出版年份</label>
+                <input type="text" id="publish_year" name="publish_year" class="input-control" placeholder="例如：2022" required
+                       value="{{ form_data.publish_year if form_data else '' }}">
+            </div>
+
+            <!-- 版本 - 強制要求 -->
+            <div class="form-group">
+                <label for="edition" class="required">版本/版次</label>
+                <input type="text" id="edition" name="edition" class="input-control" placeholder="例如：第 8 版" required
+                       value="{{ form_data.edition if form_data else '' }}">
+            </div>
+
+            <!-- ISBN -->
+            <div class="form-group">
+                <label for="isbn">ISBN 國際書號</label>
+                <input type="text" id="isbn" name="isbn" class="input-control" placeholder="請輸入 10 或 13 位數書號（選填）"
+                       value="{{ form_data.isbn if form_data else '' }}">
+            </div>
+
+            <!-- 價格輸入欄位 (出售模式下顯示) -->
+            <div class="form-group" id="price-group">
+                <label for="price" class="required">出售價格 (TWD)</label>
+                <input type="number" id="price" name="price" class="input-control" placeholder="請輸入欲售金額（如：150）" min="0" required
+                       value="{{ form_data.price if form_data else '' }}">
+            </div>
+
+            <!-- 交換要求輸入欄位 (交換模式下顯示) -->
+            <div class="form-group hidden-control" id="exchange-group">
+                <label for="exchange_item" class="required">期望交換的書籍</label>
+                <input type="text" id="exchange_item" name="exchange_item" class="input-control" placeholder="例如：想換微積分第四版或演算法書籍">
+            </div>
+
+            <!-- 適用系所 -->
+            <div class="form-group">
+                <label for="dept">適用系所</label>
+                <select id="dept" name="dept" class="input-control">
+                    <option value="">-- 請選擇適用系所（選填） --</option>
+                    <option value="資訊工程學系">資訊工程學系</option>
+                    <option value="電機工程學系">電機工程學系</option>
+                    <option value="企業管理學系">企業管理學系</option>
+                    <option value="財務金融學系">財務金融學系</option>
+                    <option value="外國語文學系">外國語文學系</option>
+                    <option value="機械工程學系">機械工程學系</option>
+                    <option value="其他系所">其他系所/通識課程</option>
+                </select>
+            </div>
+
+            <!-- 適用科目 -->
+            <div class="form-group">
+                <label for="subject">適用科目</label>
+                <input type="text" id="subject" name="subject" class="input-control" placeholder="例如：資料結構、經濟學（選填）"
+                       value="{{ form_data.subject if form_data else '' }}">
+            </div>
+
+            <!-- 書況評級 -->
+            <div class="form-group full-width">
+                <label for="condition" class="required">書籍書況評級</label>
+                <select id="condition" name="condition" class="input-control" required>
+                    <option value="">-- 請選擇書況等級 --</option>
+                    <option value="全新" {% if form_data and form_data.condition == '全新' %}selected{% endif %}>全新（無任何折損與劃記）</option>
+                    <option value="接近全新" {% if form_data and form_data.condition == '接近全新' %}selected{% endif %}>接近全新（極微細使用痕跡）</option>
+                    <option value="輕微劃記" {% if form_data and form_data.condition == '輕微劃記' %}selected{% endif %}>輕微劃記（有少許鉛筆或原子筆筆記）</option>
+                    <option value="劃記繁多" {% if form_data and form_data.condition == '劃記繁多' %}selected{% endif %}>劃記繁多（有大量螢光筆或筆記痕跡）</option>
+                    <option value="書頁破損" {% if form_data and form_data.condition == '書頁破損' %}selected{% endif %}>書頁破損或缺頁（有顯著折痕或輕微破損）</option>
+                </select>
+            </div>
+
+            <!-- 書況詳細描述 -->
+            <div class="form-group full-width">
+                <label for="description">書況詳細描述</label>
+                <textarea id="description" name="description" class="input-control" placeholder="請詳細描述書籍的使用狀況、瑕疵、劃記程度等細節...">{{ form_data.description if form_data else '' }}</textarea>
+            </div>
+
+            <!-- 封面照片上傳 (限制2MB) -->
+            <div class="form-group full-width">
+                <label class="required">書籍封面實拍照片</label>
+                <div class="upload-area" id="drop-zone" onclick="document.getElementById('book_image').click();">
+                    <div class="upload-icon">
+                        <i class="fa-regular fa-image"></i>
+                    </div>
+                    <div class="upload-text">點擊此區域 或 拖曳照片至此上傳</div>
+                    <div class="upload-hint">支援格式：PNG, JPG, JPEG, WEBP 且檔案大小限制在 2MB 以內</div>
+                    <input type="file" id="book_image" name="book_image" class="upload-input" accept="image/*" onchange="previewImage(this)">
+                </div>
+                <!-- 預覽容器 -->
+                <div class="image-preview-container" id="preview-container">
+                    <img id="image-preview" src="#" alt="書籍封面預覽" class="image-preview">
+                    <button type="button" class="remove-btn" onclick="clearPreview(event)"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 按鈕區 -->
+        <div class="form-actions">
+            <a href="/" class="btn btn-secondary"><i class="fa-solid fa-arrow-rotate-left"></i> 取消上架</a>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-cloud-arrow-up"></i> 立即發布上架</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 交易模式切換
+    function setTradeMode(mode) {
+        const saleBtn = document.getElementById('mode-sale-btn');
+        const exchangeBtn = document.getElementById('mode-exchange-btn');
+        const isExchangeInput = document.getElementById('is_exchange_input');
+        const priceGroup = document.getElementById('price-group');
+        const exchangeGroup = document.getElementById('exchange-group');
+        const priceInput = document.getElementById('price');
+        const exchangeInput = document.getElementById('exchange_item');
+
+        if (mode === 'sale') {
+            saleBtn.classList.add('active');
+            exchangeBtn.classList.remove('active');
+            isExchangeInput.value = 'false';
+            
+            // 顯示價格，隱藏交換
+            priceGroup.classList.remove('hidden-control');
+            exchangeGroup.classList.add('hidden-control');
+            
+            // 設定必填屬性
+            priceInput.setAttribute('required', 'required');
+            exchangeInput.removeAttribute('required');
+        } else {
+            saleBtn.classList.remove('active');
+            exchangeBtn.classList.add('active');
+            isExchangeInput.value = 'true';
+            
+            // 顯示交換，隱藏價格
+            priceGroup.classList.add('hidden-control');
+            exchangeGroup.classList.remove('hidden-control');
+            
+            // 設定必填屬性
+            priceInput.removeAttribute('required');
+            exchangeInput.setAttribute('required', 'required');
+        }
+    }
+
+    // 拖曳上傳支援
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('book_image');
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--primary)';
+            dropZone.style.backgroundColor = 'var(--primary-light)';
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--border)';
+            dropZone.style.backgroundColor = 'var(--light)';
+        }, false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length) {
+            fileInput.files = files;
+            previewImage(fileInput);
+        }
+    }, false);
+
+    // 圖片預覽
+    function previewImage(input) {
+        const previewContainer = document.getElementById('preview-container');
+        const previewImage = document.getElementById('image-preview');
+        const dropZone = document.getElementById('drop-zone');
+
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            
+            // 限制 2MB 前端警告
+            if (file.size > 2 * 1024 * 1024) {
+                alert('圖片檔案大小超過 2MB 限制，請壓縮後再行上傳！');
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                previewContainer.style.display = 'block';
+                dropZone.style.display = 'none';
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // 清除預覽
+    function clearPreview(e) {
+        e.stopPropagation();
+        const previewContainer = document.getElementById('preview-container');
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('book_image');
+
+        fileInput.value = '';
+        previewContainer.style.display = 'none';
+        dropZone.style.display = 'block';
+    }
+</script>
+{% endblock %}
