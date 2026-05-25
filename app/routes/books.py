@@ -175,19 +175,26 @@ def upload_action():
 
 @books_bp.route('/<int:book_id>', methods=['GET'])
 def detail(book_id):
-    """
-    GET /books/<book_id>
-    Show detailed information about a single second-hand book.
-    Inputs:
-        - URL Parameter: book_id (integer)
-    Logic:
-        - Fetch book by book_id.
-        - If not found, return 404 error.
-        - Fetch all comments related to this book (both first-level and nested replies).
-    Output:
-        - Render 'books/detail.html' passing book, seller contact (if transaction reserved and logged-in user matches), and comments.
-    """
-    pass
+    from app.models.reservation import Reservation
+    from app.models.comment import Comment
+    
+    book = Book.get_by_id(book_id)
+    if not book:
+        return "找不到該書籍", 404
+        
+    # 取得留言列表
+    comments = Comment.query.filter_by(book_id=book_id).order_by(Comment.created_at.asc()).all()
+    
+    # 檢查當前登入使用者是否已送出過預約請求
+    user_id = session.get('user_id')
+    user_req = None
+    if user_id:
+        user_req = Reservation.query.filter_by(book_id=book_id, buyer_id=user_id).first()
+        
+    return render_template('books/detail.html', 
+                           book=book, 
+                           comments=comments, 
+                           user_req=user_req)
 
 @books_bp.route('/<int:book_id>/comment', methods=['POST'])
 def add_comment(book_id):
